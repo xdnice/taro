@@ -1,3 +1,4 @@
+import 'weui'
 import Nerv from 'nervjs'
 
 class CheckboxGroup extends Nerv.Component {
@@ -6,6 +7,7 @@ class CheckboxGroup extends Nerv.Component {
     this.state = {
       value: []
     }
+    this.uniqueName = Date.now().toString(36)
     this.toggleChange = this.toggleChange.bind(this)
   }
 
@@ -28,46 +30,52 @@ class CheckboxGroup extends Nerv.Component {
         value: resp
       }
     })
-    onChange(e)
+    onChange && onChange(e)
   }
 
   render () {
-    const { name = '' } = this.props
+    const { name = this.uniqueName } = this.props
     // 给 children 绑定事件
     const children = Nerv.Children.toArray(this.props.children).map(
       (item, i) => {
         let _key = item.props.for
-        const chd = Nerv.Children.toArray(item.props.children).map(ch => {
-          if (ch.name === 'Checkbox') {
-            if (ch.props.checked) {
-              this.state.value[i] = {
-                name: ch.props.name,
-                value: ch.props.value,
-                checked: true
-              }
-            } else {
-              this.state.value[i] = {
-                name: ch.props.name,
-                value: ch.props.value,
-                checked: false
-              }
+        if (item.name === 'Checkbox') {
+          return handleChecked.bind(this)(item, i, _key, name)
+        } else {
+          return Nerv.cloneElement(item, '', Nerv.Children.toArray(item.props.children).map(ch => {
+            if (ch && ch.name === 'Checkbox') {
+              return handleChecked.bind(this)(ch, i, _key, name)
             }
-
-            return Nerv.cloneElement(ch, {
-              onChange: e => this.toggleChange(e, i),
-              for: _key,
-              name: name
-            })
-          }
-          return ch
-        })
-
-        return Nerv.cloneElement(item, '', chd)
+            return ch
+          }))
+        }
       }
     )
 
     return children
   }
+}
+
+function handleChecked (d, i, key, name) {
+  if (d.props.checked) {
+    this.state.value[i] = {
+      name: d.props.name,
+      value: d.props.value,
+      checked: true
+    }
+  } else {
+    this.state.value[i] = {
+      name: d.props.name,
+      value: d.props.value,
+      checked: false
+    }
+  }
+
+  return Nerv.cloneElement(d, {
+    onChange: e => this.toggleChange(e, i),
+    for: key,
+    name: name
+  })
 }
 
 export default CheckboxGroup
